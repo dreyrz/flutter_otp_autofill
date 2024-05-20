@@ -1,6 +1,10 @@
 # otp_autofill
 
-A new Flutter project.
+Use the following message to trigger the SMS Retriever API:
+"
+Your verification code is: 124412
+EuQrGMkr5VK
+"
 
 ## Getting Started
 
