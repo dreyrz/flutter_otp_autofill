@@ -11,7 +11,7 @@ private var smsReceiver: MySMSBroadcastReceiver? = null
         super.configureFlutterEngine(flutterEngine)
         val binaryMessenger = flutterEngine.dartExecutor.binaryMessenger
         val otpRetriever = OtpRetriever()
-        smsReceiver = MySMSBroadcastReceiver(this,context,binaryMessenger, otpRetriever)
+        smsReceiver = MySMSBroadcastReceiver(this, context, otpRetriever, binaryMessenger)
         smsReceiver!!.registerChannel()
     }
 

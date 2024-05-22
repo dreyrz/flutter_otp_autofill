@@ -27,8 +27,9 @@ inline fun <reified T : Parcelable> Bundle.parcelable(key: String): T? = when {
 class MySMSBroadcastReceiver(
     private val activity: Activity,
     private val context: Context,
-    private val binaryMessenger: BinaryMessenger,
-    private val otpRetriever: OtpRetriever) :
+    private val otpRetriever: OtpRetriever,
+    binaryMessenger: BinaryMessenger,
+    ) :
     MethodChannel.MethodCallHandler, BroadcastReceiver() {
 
     private val intent = IntentFilter(SmsRetriever.SMS_RETRIEVED_ACTION)
@@ -36,6 +37,10 @@ class MySMSBroadcastReceiver(
 
     fun registerChannel(){
         channel.setMethodCallHandler(this)
+    }
+    fun dispose(){
+        context.unregisterReceiver(this)
+        Log.w(TAG, "dispose")
     }
     private fun startRetriever(){
         val client = SmsRetriever.getClient(activity)
@@ -49,19 +54,23 @@ class MySMSBroadcastReceiver(
         }
     }
 
-     fun dispose(){
-        context.unregisterReceiver(this)
-        channel.setMethodCallHandler(null)
-    }
+
 
     private fun emitOtp(otp: String?){
         Log.w(TAG, "otp emitted")
-        channel.invokeMethod("otp", otp)
+        if(otp!=null){
+            channel.invokeMethod("otp", otp)
+        }
     }
 
     override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
-        if(call.method=="listenToOtp"){
+        if(call.method=="startListening"){
             startRetriever()
+            result.success("start listening succesfully")
+        }
+        else if(call.method=="dispose"){
+            dispose()
+            result.success("receiver disposed")
         }
     }
 
@@ -73,17 +82,19 @@ class MySMSBroadcastReceiver(
             val status: Status? = extras?.parcelable(SmsRetriever.EXTRA_STATUS)
             Log.w(TAG, "SmsRetriever.SMS_RETRIEVED_ACTION")
 
-            if (status?.statusCode ==  CommonStatusCodes.SUCCESS) {
-                Log.w(TAG, "CommonStatusCodes.SUCCESS")
-                val message = extras.getString(SmsRetriever.EXTRA_SMS_MESSAGE)
-                val otp = otpRetriever.retrieveOtpFromMessage(message)
-                emitOtp(otp)
-            }
-            else if (status?.statusCode == CommonStatusCodes.TIMEOUT){
-                Log.w(TAG, "timeout")
-            }
-            else {
-                Log.w(TAG, "unexpected error")
+            when (status?.statusCode) {
+                CommonStatusCodes.SUCCESS -> {
+                    Log.w(TAG, "CommonStatusCodes.SUCCESS")
+                    val message = extras.getString(SmsRetriever.EXTRA_SMS_MESSAGE)
+                    val otp = otpRetriever.retrieveOtpFromMessage(message)
+                    emitOtp(otp)
+                }
+                CommonStatusCodes.TIMEOUT -> {
+                    Log.w(TAG, "timeout")
+                }
+                else -> {
+                    Log.w(TAG, "unexpected error")
+                }
             }
         }
 
