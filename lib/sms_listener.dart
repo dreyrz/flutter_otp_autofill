@@ -2,27 +2,41 @@ import 'dart:async';
 
 import 'package:flutter/services.dart';
 
+typedef OtpCallback = void Function(String otp);
+
 class SmsListener {
   static SmsListener? _singleton;
-
   factory SmsListener() => _singleton ?? SmsListener._();
-  static const _channel = MethodChannel('sms_listener');
 
   SmsListener._() {
     _channel.setMethodCallHandler(_emitOtpState);
   }
 
+  static const _channel = MethodChannel('sms_listener');
+
+  StreamController<String> _otpStream = StreamController.broadcast();
+
+  OtpCallback? _otpCallback;
+
   Future<void> _emitOtpState(MethodCall methodCalled) async {
     if (methodCalled.method == "otp") {
-      _otpStream.add(methodCalled.arguments);
+      _otpCallback?.call(methodCalled.arguments);
+      dispose();
     }
   }
 
-  final StreamController<String> _otpStream = StreamController.broadcast();
+  Future<void> startListening({
+    OtpCallback? onOtpReceived,
+  }) async {
+    if (_otpStream.isClosed) {
+      _otpStream = StreamController.broadcast();
+    }
+    await _channel.invokeMethod('startListening');
+    _otpCallback = onOtpReceived;
+  }
 
-  Stream<String> get otp => _otpStream.stream;
-
-  Future<void> listenToOtp() async {
-    await _channel.invokeMethod('listenToOtp');
+  Future<void> dispose() async {
+    await _channel.invokeMethod('dispose');
+    await _otpStream.close();
   }
 }
