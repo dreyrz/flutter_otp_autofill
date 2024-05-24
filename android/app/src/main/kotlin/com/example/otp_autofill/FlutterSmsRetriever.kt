@@ -1,54 +1,39 @@
 package com.example.otp_autofill
 
-
 import android.app.Activity
 import android.content.BroadcastReceiver
 import android.content.ContentValues.TAG
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
-import android.os.Build.VERSION.SDK_INT
 import android.os.Bundle
-import android.os.Parcelable
 import android.util.Log
 import com.google.android.gms.auth.api.phone.SmsRetriever
 import com.google.android.gms.common.api.CommonStatusCodes
 import com.google.android.gms.common.api.Status
-import io.flutter.plugin.common.BinaryMessenger
-import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 
-
-inline fun <reified T : Parcelable> Bundle.parcelable(key: String): T? = when {
-    SDK_INT >= 33 -> getParcelable(key, T::class.java)
-    else -> @Suppress("DEPRECATION") getParcelable(key) as? T
-}
-
-class SmsRetriever(
+class FlutterSmsRetriever(
     private val activity: Activity,
     private val context: Context,
-    binaryMessenger: BinaryMessenger,
-) : MethodChannel.MethodCallHandler, BroadcastReceiver(), OtpRetriever {
+    private val channel: MethodChannel,
+) : BroadcastReceiver(), OtpReceiver {
 
-    private val intent = IntentFilter(SmsRetriever.SMS_RETRIEVED_ACTION)
-    private val channel = MethodChannel(binaryMessenger, "sms_listener")
+    private val intentFilter = IntentFilter(SmsRetriever.SMS_RETRIEVED_ACTION)
 
-    override fun registerChannel(){
-        channel.setMethodCallHandler(this)
-    }
     override fun dispose(){
+        Log.w(TAG, "FlutterSmsRetriever dispose")
         context.unregisterReceiver(this)
-        Log.w(TAG, "dispose")
     }
     override fun startReceiver(){
         val client = SmsRetriever.getClient(activity)
         val task = client.startSmsRetriever()
         task.addOnSuccessListener {
-            Log.w(TAG, "addOnSuccessListener")
-            context.registerReceiver(this,intent)
+            Log.w(TAG, "FlutterSmsRetriever addOnSuccessListener")
+            context.registerReceiver(this, intentFilter)
         }
         task.addOnFailureListener {
-            Log.w(TAG, "addOnFailureListener")
+            Log.w(TAG, "FlutterSmsRetriever addOnFailureListener")
         }
     }
 
@@ -56,17 +41,6 @@ class SmsRetriever(
         Log.w(TAG, "otp emitted")
         if(otp!=null){
             channel.invokeMethod("otp", otp)
-        }
-    }
-
-    override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
-        if(call.method=="startListening"){
-            startReceiver()
-            result.success("start listening successfully")
-        }
-        else if(call.method=="dispose"){
-            dispose()
-            result.success("receiver disposed")
         }
     }
 

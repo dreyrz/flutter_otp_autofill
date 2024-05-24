@@ -27,11 +27,16 @@ class SmsListener {
 
   Future<void> startListening({
     OtpCallback? onOtpReceived,
+    bool useRetrieverApi = true,
   }) async {
     if (_otpStream.isClosed) {
       _otpStream = StreamController.broadcast();
     }
-    await _channel.invokeMethod('startListening');
+    await _channel.invokeMethod(
+      'startListening',
+      {"useRetrieverApi": useRetrieverApi},
+    );
+
     _otpCallback = onOtpReceived;
   }
 

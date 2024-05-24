@@ -18,12 +18,14 @@ class _ListenScreenState extends State<ListenScreen> {
   void initState() {
     smsListener = SmsListener();
     controllers = List.generate(6, (_) => TextEditingController());
-    listen();
     super.initState();
   }
 
-  void listen() {
-    smsListener.startListening(onOtpReceived: fillInputs);
+  void listen(bool useRetrieverApi) {
+    smsListener.startListening(
+      onOtpReceived: fillInputs,
+      useRetrieverApi: useRetrieverApi,
+    );
   }
 
   void destroy() {
@@ -47,16 +49,20 @@ class _ListenScreenState extends State<ListenScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Expanded(
-              child: Row(
+              child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   ElevatedButton(
-                    onPressed: destroy,
-                    child: const Text('stop listening'),
+                    onPressed: () => listen(false),
+                    child: const Text('SMS User Consent'),
                   ),
                   ElevatedButton(
-                    onPressed: listen,
-                    child: const Text('start listening'),
+                    onPressed: () => listen(true),
+                    child: const Text('SMS Retriever'),
+                  ),
+                  ElevatedButton(
+                    onPressed: destroy,
+                    child: const Text('Dispose listener'),
                   ),
                 ],
               ),

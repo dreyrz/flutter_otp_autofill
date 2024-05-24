@@ -4,8 +4,7 @@ package com.example.otp_autofill
 import android.content.ContentValues.TAG
 import android.util.Log
 
-interface OtpRetriever {
-    fun registerChannel()
+interface OtpReceiver {
     fun dispose()
     fun startReceiver()
     fun retrieveOtpFromMessage(message: String?): String? {
