@@ -5,8 +5,8 @@ import 'package:flutter/services.dart';
 typedef OtpCallback = void Function(String otp);
 
 class SmsListener {
-  static SmsListener? _singleton;
-  factory SmsListener() => _singleton ?? SmsListener._();
+  static final SmsListener _singleton = SmsListener._();
+  factory SmsListener() => _singleton;
 
   SmsListener._() {
     _channel.setMethodCallHandler(_emitOtpState);
